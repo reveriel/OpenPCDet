@@ -13,3 +13,7 @@ venv/
 *.pkl
 *.zip
 *.bin
+output/
+spconv/
+.vscode/
+**version.py

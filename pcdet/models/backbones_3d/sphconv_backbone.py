@@ -1,24 +1,29 @@
 import torch.nn as nn
-import spconv
+import sphconv
 from functools import partial
 import torch
 from .timer import Timer
-
 
 def post_act_block(in_channels, out_channels, kernel_size, indice_key=None, stride=1, padding=0,
                    conv_type='subm', norm_fn=None):
 
     if conv_type == 'subm':
-        conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, bias=False, indice_key=indice_key)
+        # conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, bias=False, indice_key=indice_key)
+        conv = sphconv.Conv3d(in_channels, out_channels, kernel_size, bias=False, indice_key=indice_key,
+                            subm=True)
     elif conv_type == 'spconv':
-        conv = spconv.SparseConv3d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
-                                   bias=False, indice_key=indice_key)
+        # conv = spconv.SparseConv3d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
+        #                            bias=False, indice_key=indice_key)
+        conv = sphconv.Conv3d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
+                              bias=False, indice_key=indice_key, subm=False)
+
     elif conv_type == 'inverseconv':
-        conv = spconv.SparseInverseConv3d(in_channels, out_channels, kernel_size, indice_key=indice_key, bias=False)
+        raise NotImplementedError
+        # conv = spconv.SparseInverseConv3d(in_channels, out_channels, kernel_size, indice_key=indice_key, bias=False)
     else:
         raise NotImplementedError
 
-    m = spconv.SparseSequential(
+    m = sphconv.Sequential(
         conv,
         norm_fn(out_channels),
         nn.ReLU(),
@@ -27,52 +32,52 @@ def post_act_block(in_channels, out_channels, kernel_size, indice_key=None, stri
     return m
 
 
-class VoxelBackBone8x(nn.Module):
+class RangeVoxelBackBone8x(nn.Module):
     def __init__(self, model_cfg, input_channels, grid_size, **kwargs):
         super().__init__()
         self.timer = Timer()
         self.model_cfg = model_cfg
         norm_fn = partial(nn.BatchNorm1d, eps=1e-3, momentum=0.01)
 
-        self.sparse_shape = grid_size[::-1] + [1, 0, 0]
+        # self.sparse_shape = grid_size[::-1] + [1, 0, 0]
 
-        self.conv_input = spconv.SparseSequential(
-            spconv.SubMConv3d(input_channels, 16, 3, padding=1, bias=False, indice_key='subm1'),
+        self.conv_input = sphconv.Sequential(
+            sphconv.Conv3d(input_channels, 16, 3, padding=1, bias=False, indice_key='subm1', subm=True),
             norm_fn(16),
             nn.ReLU(),
         )
         block = post_act_block
 
-        self.conv1 = spconv.SparseSequential(
+        self.conv1 = sphconv.Sequential(
             block(16, 16, 3, norm_fn=norm_fn, padding=1, indice_key='subm1'),
         )
 
-        self.conv2 = spconv.SparseSequential(
+        self.conv2 = sphconv.Sequential(
             # [1600, 1408, 41] <- [800, 704, 21]
             block(16, 32, 3, norm_fn=norm_fn, stride=2, padding=1, indice_key='spconv2', conv_type='spconv'),
-            block(32, 32, 3, norm_fn=norm_fn, padding=1, indice_key='subm2'),
+            block(32, 32, 3, norm_fn=norm_fn, padding=1, indice_key='subm2', ),
             block(32, 32, 3, norm_fn=norm_fn, padding=1, indice_key='subm2'),
         )
 
-        self.conv3 = spconv.SparseSequential(
+        self.conv3 = sphconv.Sequential(
             # [800, 704, 21] <- [400, 352, 11]
             block(32, 64, 3, norm_fn=norm_fn, stride=2, padding=1, indice_key='spconv3', conv_type='spconv'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm3'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm3'),
         )
 
-        self.conv4 = spconv.SparseSequential(
+        self.conv4 = sphconv.Sequential(
             # [400, 352, 11] <- [200, 176, 5]
-            block(64, 64, 3, norm_fn=norm_fn, stride=2, padding=(0, 1, 1), indice_key='spconv4', conv_type='spconv'),
+            block(64, 64, 3, norm_fn=norm_fn, stride=2, padding=(1, 0, 1), indice_key='spconv4', conv_type='spconv'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm4'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm4'),
         )
 
         last_pad = 0
         last_pad = self.model_cfg.get('last_pad', last_pad)
-        self.conv_out = spconv.SparseSequential(
+        self.conv_out = sphconv.Sequential(
             # [200, 150, 5] -> [200, 150, 2]
-            spconv.SparseConv3d(64, 128, (3, 1, 1), stride=(2, 1, 1), padding=last_pad,
+            sphconv.Conv3d(64, 128, (1, 3, 1), stride=(1, 2, 1), padding=last_pad,
                                 bias=False, indice_key='spconv_down2'),
             norm_fn(128),
             nn.ReLU(),
@@ -90,17 +95,21 @@ class VoxelBackBone8x(nn.Module):
             batch_dict:
                 encoded_spconv_tensor: sparse tensor
         """
-        voxel_features, voxel_coords = batch_dict['voxel_features'], batch_dict['voxel_coords']
+        # voxel_features, voxel_coords = batch_dict['voxel_features'], batch_dict['voxel_coords']
+        input_sph_tensor = batch_dict['rangeV']
         batch_size = batch_dict['batch_size']
-        input_sp_tensor = spconv.SparseConvTensor(
-            features=voxel_features,
-            indices=voxel_coords.int(),
-            spatial_shape=self.sparse_shape,
-            batch_size=batch_size
-        )
+
+        # input_sp_tensor = spconv.SparseConvTensor(
+        #     features=voxel_features,
+        #     indices=voxel_coords.int(),
+        #     # spatial_shape=self.sparse_shape,
+        #     batch_size=batch_size
+        # )
+        # input_sph_tensor = sphconv.RangeVoxel(
+        # )
 
         self.timer.start()
-        x = self.conv_input(input_sp_tensor)
+        x = self.conv_input(input_sph_tensor)
         self.timer.record("conv_input")
 
         x_conv1 = self.conv1(x)

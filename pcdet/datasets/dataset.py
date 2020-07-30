@@ -6,6 +6,7 @@ from .augmentor.data_augmentor import DataAugmentor
 from .processor.data_processor import DataProcessor
 from .processor.point_feature_encoder import PointFeatureEncoder
 from ..utils import common_utils
+from sphconv import merge_rangevoxel_batch
 
 
 class DatasetTemplate(torch_data.Dataset):
@@ -168,6 +169,8 @@ class DatasetTemplate(torch_data.Dataset):
                     for k in range(batch_size):
                         batch_gt_boxes3d[k, :val[k].__len__(), :] = val[k]
                     ret[key] = batch_gt_boxes3d
+                elif key in ['rangeV']:
+                    ret[key] = merge_rangevoxel_batch(val)
                 else:
                     ret[key] = np.stack(val, axis=0)
             except:

@@ -62,6 +62,22 @@ class DataProcessor(object):
         data_dict['voxel_num_points'] = num_points
         return data_dict
 
+    def transform_points_to_rangevoxels(self, data_dict=None, config=None, voxel_generator=None):
+        if data_dict is None:
+            from sphconv import VoxelGenerator
+
+            voxel_generator = VoxelGenerator(
+                                config.v_res, config.h_res, config.d_res,
+                                config.v_range, config.h_range, config.d_range, config.log)
+
+            self.grid_size = np.array([config.d_res, config.h_res, config.v_res]).astype(np.int64)
+            return partial(self.transform_points_to_rangevoxels, voxel_generator=voxel_generator)
+
+        points = data_dict['points']
+        rangeV = voxel_generator.generate(points)
+        data_dict['rangeV'] = rangeV
+        return data_dict
+
     def forward(self, data_dict):
         """
         Args:

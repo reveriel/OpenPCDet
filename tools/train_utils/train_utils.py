@@ -3,6 +3,8 @@ import os
 import glob
 import tqdm
 from torch.nn.utils import clip_grad_norm_
+import time
+from pcdet.models.backbones_3d.timer import Timer
 
 
 def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, accumulated_iter, optim_cfg,
@@ -13,7 +15,17 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
     if rank == 0:
         pbar = tqdm.tqdm(total=total_it_each_epoch, leave=leave_pbar, desc='train', dynamic_ncols=True)
 
+    start_time = time.time()
+    loop_n = 100
+    timer = Timer()
+
     for cur_it in range(total_it_each_epoch):
+        timer.start()
+
+        loop_n -= 1
+        if loop_n == 0:
+            break
+
         try:
             batch = next(dataloader_iter)
         except StopIteration:
@@ -22,6 +34,7 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
             print('new iters')
 
         lr_scheduler.step(accumulated_iter)
+
 
         try:
             cur_lr = float(optimizer.lr)
@@ -33,12 +46,16 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
 
         model.train()
         optimizer.zero_grad()
+        timer.record("prep")
 
         loss, tb_dict, disp_dict = model_func(model, batch)
+        timer.record("model_func")
 
         loss.backward()
+        timer.record("backward")
         clip_grad_norm_(model.parameters(), optim_cfg.GRAD_NORM_CLIP)
         optimizer.step()
+        timer.record("opt_step")
 
         accumulated_iter += 1
         disp_dict.update({'loss': loss.item(), 'lr': cur_lr})
@@ -55,6 +72,13 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
                 tb_log.add_scalar('meta_data/learning_rate', cur_lr, accumulated_iter)
                 for key, val in tb_dict.items():
                     tb_log.add_scalar('train/' + key, val, accumulated_iter)
+        timer.end()
+
+    torch.cuda.synchronize()
+    end_time = time.time()
+    print("time per it = ", (end_time - start_time) / 100)
+    exit(0)
+
     if rank == 0:
         pbar.close()
     return accumulated_iter
@@ -89,7 +113,7 @@ def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_
                 rank=rank, tbar=tbar, tb_log=tb_log,
                 leave_pbar=(cur_epoch + 1 == total_epochs),
                 total_it_each_epoch=total_it_each_epoch,
-                dataloader_iter=dataloader_iter
+                dataloader_iter=dataloader_iter,
             )
 
             # save trained model

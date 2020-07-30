@@ -13,6 +13,8 @@ def build_network(model_cfg, num_class, dataset):
 
 def load_data_to_gpu(batch_dict):
     for key, val in batch_dict.items():
+        if key in ['rangeV']:
+            batch_dict[key] = val.cuda()
         if not isinstance(val, np.ndarray):
             continue
         if key in ['frame_id', 'metadata', 'calib', 'image_shape']:
