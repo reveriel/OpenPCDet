@@ -1,6 +1,6 @@
 from functools import partial
 import torch
-from .timer import Timer
+from .timer import dummyTimer as Timer
 
 import spconv
 import torch.nn as nn

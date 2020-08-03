@@ -2,7 +2,7 @@ import torch.nn as nn
 import sphconv
 from functools import partial
 import torch
-from .timer import Timer
+from .timer import dummyTimer as Timer
 
 def post_act_block(in_channels, out_channels, kernel_size, indice_key=None, stride=1, padding=0,
                    conv_type='subm', norm_fn=None):

@@ -5,7 +5,7 @@ import torch
 import tqdm
 from torch.nn.utils import clip_grad_norm_
 import time
-from pcdet.models.backbones_3d.timer import Timer
+from pcdet.models.backbones_3d.timer import dummyTimer as Timer
 
 
 def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, accumulated_iter, optim_cfg,
@@ -16,16 +16,12 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
     if rank == 0:
         pbar = tqdm.tqdm(total=total_it_each_epoch, leave=leave_pbar, desc='train', dynamic_ncols=True)
 
-    start_time = time.time()
-    loop_n = 100
+    loop_n = 50
     timer = Timer()
 
     for cur_it in range(total_it_each_epoch):
         timer.start()
 
-        loop_n -= 1
-        if loop_n == 0:
-            break
 
         try:
             batch = next(dataloader_iter)
@@ -75,9 +71,10 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
                     tb_log.add_scalar('train/' + key, val, accumulated_iter)
         timer.end()
 
-    torch.cuda.synchronize()
-    end_time = time.time()
-    print("time per it = ", (end_time - start_time) / 100)
+        loop_n -= 1
+        if loop_n == 0:
+            break
+
     exit(0)
 
     if rank == 0:

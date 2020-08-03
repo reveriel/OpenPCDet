@@ -4,6 +4,16 @@ import torch
 def avg_onthefly(cnt, old_avg, new_val):
     return  old_avg + (new_val - old_avg) / cnt
 
+class dummyTimer():
+    def __init__(self, cuda_sync=True):
+        pass
+    def start(self):
+        pass
+    def record(self, event):
+        pass
+    def end(self):
+        pass
+
 class Timer():
     def __init__(self, cuda_sync=True):
         self.cnt = 0

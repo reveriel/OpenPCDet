@@ -74,11 +74,11 @@ class AnchorGenerator(object):
             anchors = anchors[:, :, :, :, None, :].repeat(1, 1, 1, 1, num_anchor_rotation, 1)
             anchor_rotation = anchor_rotation.view(1, 1, 1, 1, -1, 1).repeat([*anchors.shape[0:3], num_anchor_size, 1, 1])
             if self.exp[0]:
-                print("phi shape = ", phi.shape)
-                print("anch rot shape = ", anchor_rotation.shape)
+                # print("phi shape = ", phi.shape)
+                # print("anch rot shape = ", anchor_rotation.shape)
                 phi = phi.view(
                     *phi.shape[0:3], 1, -1, 1).repeat([1, 1, 1, num_anchor_size, 1, 1])
-                print("phi shape = ", phi.shape)
+                # print("phi shape = ", phi.shape)
 
                 anchor_rotation -= phi
             anchors = torch.cat((anchors, anchor_rotation), dim=-1)  # [x, y, z, num_size, num_rot, 7]
