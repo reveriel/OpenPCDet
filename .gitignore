@@ -19,3 +19,4 @@ spconv/
 **version.py
 *.qdrep
 *.ncu-rep
+**/.ipynb_checkpoints/

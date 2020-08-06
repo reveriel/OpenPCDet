@@ -71,6 +71,7 @@ class KittiDataset(DatasetTemplate):
 
     def get_label(self, idx):
         label_file = self.root_split_path / 'label_2' / ('%s.txt' % idx)
+        print("label_file = ", str(label_file))
         assert label_file.exists()
         return object3d_kitti.get_objects_from_label(label_file)
 

@@ -3,10 +3,14 @@ import torch
 import torch.nn as nn
 
 from ...utils import box_coder_utils, common_utils, loss_utils
-from .target_assigner.anchor_generator import AnchorGenerator
+from .target_assigner.anchor_generator import AnchorGenerator, AnchorGeneratorRV
 from .target_assigner.atss_target_assigner import ATSSTargetAssigner
 from .target_assigner.axis_aligned_target_assigner import AxisAlignedTargetAssigner
 
+AG = {
+    'AnchorGenerator' : AnchorGenerator,
+    'AnchorGeneratorRV' : AnchorGeneratorRV
+}
 
 class AnchorHeadTemplate(nn.Module):
     def __init__(self, model_cfg, num_class, class_names, grid_size, point_cloud_range, predict_boxes_when_training):
@@ -23,8 +27,12 @@ class AnchorHeadTemplate(nn.Module):
             **anchor_target_cfg.get('BOX_CODER_CONFIG', {})
         )
 
+
         anchor_generator_cfg = self.model_cfg.ANCHOR_GENERATOR_CONFIG
+        anchor_generator_name = self.model_cfg.ANCHOR_GENERATOR.get('NAME', 'AnchorGenerator')
+
         anchors, self.num_anchors_per_location = self.generate_anchors(
+            anchor_generator_name,
             anchor_generator_cfg, grid_size=grid_size, point_cloud_range=point_cloud_range,
             anchor_ndim=self.box_coder.code_size
         )
@@ -35,11 +43,15 @@ class AnchorHeadTemplate(nn.Module):
         self.build_losses(self.model_cfg.LOSS_CONFIG)
 
     @staticmethod
-    def generate_anchors(anchor_generator_cfg, grid_size, point_cloud_range, anchor_ndim=7):
-        anchor_generator = AnchorGenerator(
+    def generate_anchors(
+        anchor_generator_name,
+        anchor_generator_cfg, grid_size, point_cloud_range, anchor_ndim=7):
+
+        anchor_generator = AG[anchor_generator_name](
             anchor_range=point_cloud_range,
             anchor_generator_config=anchor_generator_cfg
         )
+
         feature_map_size = [grid_size[:2] // config['feature_map_stride'] for config in anchor_generator_cfg]
         print("feature_map_size =", feature_map_size)
         anchors_list, num_anchors_per_location_list = anchor_generator.generate_anchors(feature_map_size)
