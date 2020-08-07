@@ -35,6 +35,9 @@ MODEL:
         DIR_LIMIT_OFFSET: 0.0
         NUM_DIR_BINS: 2
 
+        ANCHOR_GENERATOR:
+            NAME: AnchorGenerator
+
         ANCHOR_GENERATOR_CONFIG: [
             {
                 'class_name': 'Car',

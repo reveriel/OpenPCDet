@@ -74,6 +74,43 @@ class DataProcessor(object):
         data_dict['voxel_num_points'] = num_points
         return data_dict
 
+    def transform_points_to_voxels_rv_simple(self, data_dict=None, config=None, voxel_generator=None):
+        """ generate voxels using sphericla coordinate,
+            for testing accuracy and debug.
+        """
+        if data_dict is None:
+
+            from spconv.utils import VoxelGeneratorV3
+
+
+            voxel_generator = VoxelGeneratorV3(
+                voxel_size=config.VOXEL_SIZE_,
+                point_cloud_range=self.point_cloud_range,
+                point_cloud_sphere_range=config.POINT_CLOUD_SPHERE_RANGE,
+                max_num_points=config.MAX_POINTS_PER_VOXEL,
+                max_voxels=config.MAX_NUMBER_OF_VOXELS[self.mode]
+            )
+            grid_size = (self.point_cloud_range[3:6] - self.point_cloud_range[0:3]) / np.array(config.VOXEL_SIZE)
+            self.grid_size = np.round(grid_size).astype(np.int64)
+            self.voxel_size = config.VOXEL_SIZE
+            return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator)
+
+        points = data_dict['points']
+        voxel_output = voxel_generator.generate(points)
+        if isinstance(voxel_output, dict):
+            voxels, coordinates, num_points = \
+                voxel_output['voxels'], voxel_output['coordinates'], voxel_output['num_points_per_voxel']
+        else:
+            voxels, coordinates, num_points = voxel_output
+
+        if not data_dict['use_lead_xyz']:
+            voxels = voxels[..., 3:]  # remove xyz in voxels(N, 3)
+
+        data_dict['voxels'] = voxels
+        data_dict['voxel_coords'] = coordinates
+        data_dict['voxel_num_points'] = num_points
+        return data_dict
+
     def transform_points_to_rangevoxels(self, data_dict=None, config=None, voxel_generator=None):
         if data_dict is None:
             from sphconv import VoxelGenerator

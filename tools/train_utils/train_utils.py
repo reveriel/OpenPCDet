@@ -71,11 +71,10 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
                     tb_log.add_scalar('train/' + key, val, accumulated_iter)
         timer.end()
 
-        loop_n -= 1
-        if loop_n == 0:
-            break
+        # loop_n -= 1
+        # if loop_n == 0:
+        #     break
 
-    exit(0)
 
     if rank == 0:
         pbar.close()

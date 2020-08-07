@@ -86,10 +86,10 @@ class AnchorGeneratorRV(object):
         anchor_range_sphere = np.array([
             np.log(anchor_range_cartisian[0]),
             np.radians(-45),
-            np.radians(6),
+            0, # unused
             np.log(anchor_range_cartisian[3]),
             np.radians(45),
-            np.radians(70.4)
+            0
         ])
 
         for grid_size, anchor_size, anchor_rotation, anchor_height, align_center in zip(
@@ -116,9 +116,8 @@ class AnchorGeneratorRV(object):
 
             z_shifts = logr_shifts.new_tensor(anchor_height)
             num_anchor_size, num_anchor_rotation = anchor_size.__len__(), anchor_rotation.__len__()
-            anchor_size = logr_shifts.new_tensor(anchor_size)
             anchor_rotation = logr_shifts.new_tensor(anchor_rotation)
-
+            anchor_size = logr_shifts.new_tensor(anchor_size)
             logr_shifts, phi_shifts, z_shifts = torch.meshgrid([
                 logr_shifts, phi_shifts, z_shifts
             ])  # [x_grid, y_grid, z_grid]
@@ -140,7 +139,7 @@ class AnchorGeneratorRV(object):
             phi_shifts = phi_shifts.view(
                 *anchors.shape[0:3], 1, -1, 1).repeat([1, 1, 1, num_anchor_size, 1, 1])
 
-            anchor_rotation -= phi_shifts
+            anchor_rotation += phi_shifts
             anchors = torch.cat((anchors, anchor_rotation), dim=-1)  # [x, y, z, num_size, num_rot, 7]
 
             anchors = anchors.permute(2, 1, 0, 3, 4, 5).contiguous()
@@ -156,7 +155,7 @@ if __name__ == '__main__':
     config = [
         EasyDict({
             # 'anchor_sizes': [[2.1, 4.7, 1.7], [0.86, 0.91, 1.73], [0.84, 1.78, 1.78]],
-            'anchor_rotations': [0, 1.57],
+            # 'anchor_rotations': [0, 1.57],
             # 'anchor_heights': [0, 0.5],
             'class_name': 'Car',
             'anchor_sizes': [[3.9, 1.6, 1.56]],

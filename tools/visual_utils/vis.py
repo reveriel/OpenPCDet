@@ -202,7 +202,7 @@ def draw_box_in_bev(img,
 
 def kitti_vis(points, boxes=None, labels=None):
     vis_voxel_size = [0.1, 0.1, 0.1]
-    vis_point_range = [0, -30, -3, 64, 30, 1]
+    vis_point_range = [0, -40, -3, 70.4, 40, 1]
     bev_map = point_to_vis_bev(points, vis_voxel_size, vis_point_range)
     if boxes is not None:
         bev_map = draw_box_in_bev(bev_map, vis_point_range, boxes, [0, 255, 0], 1, labels)

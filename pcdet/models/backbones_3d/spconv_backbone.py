@@ -10,10 +10,10 @@ def post_act_block(in_channels, out_channels, kernel_size, indice_key=None, stri
                    conv_type='subm', norm_fn=None):
 
     if conv_type == 'subm':
-        conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, bias=False, indice_key=indice_key)
+        conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, bias=False, indice_key=indice_key, use_hash=False)
     elif conv_type == 'spconv':
         conv = spconv.SparseConv3d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
-                                   bias=False, indice_key=indice_key)
+                                   bias=False, indice_key=indice_key, use_hash=False)
     elif conv_type == 'inverseconv':
         conv = spconv.SparseInverseConv3d(in_channels, out_channels, kernel_size, indice_key=indice_key, bias=False)
     else:
@@ -138,6 +138,8 @@ class VoxelBackBone8x(nn.Module):
             spatial_shape=self.sparse_shape,
             batch_size=batch_size
         )
+        # print("input spahtial shape = ", self.sparse_shape)
+        # print("input feature shape = ", voxel_features.shape)
 
         self.timer.start()
         x = self.conv_input(input_sp_tensor)
