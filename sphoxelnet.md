@@ -17,10 +17,10 @@ python train.py --cfg_file cfgs/kitti_models/<model.yaml> --batch_size 8 --epoch
 
 ## Models
 
-- `sphconv_simple.yaml`
+- `sphoxelnet_simple.yaml`
 
     sphoxelnet with spconv, for testing
-- `sphconv.yaml`
+- `sphoxelnet.yaml`
 
     sphoxelnet with sphconv
 
