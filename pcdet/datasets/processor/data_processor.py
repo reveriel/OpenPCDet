@@ -82,7 +82,6 @@ class DataProcessor(object):
 
             from spconv.utils import VoxelGeneratorV3
 
-
             voxel_generator = VoxelGeneratorV3(
                 voxel_size=config.VOXEL_SIZE_,
                 point_cloud_range=self.point_cloud_range,
@@ -90,10 +89,10 @@ class DataProcessor(object):
                 max_num_points=config.MAX_POINTS_PER_VOXEL,
                 max_voxels=config.MAX_NUMBER_OF_VOXELS[self.mode]
             )
-            grid_size = (self.point_cloud_range[3:6] - self.point_cloud_range[0:3]) / np.array(config.VOXEL_SIZE)
+            grid_size = (np.array(config.POINT_CLOUD_SPHERE_RANGE)[3:6] - np.array(config.POINT_CLOUD_SPHERE_RANGE)[0:3]) / np.array(config.VOXEL_SIZE_)
             self.grid_size = np.round(grid_size).astype(np.int64)
             self.voxel_size = config.VOXEL_SIZE
-            return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator)
+            return partial(self.transform_points_to_voxels_rv_simple, voxel_generator=voxel_generator)
 
         points = data_dict['points']
         voxel_output = voxel_generator.generate(points)
