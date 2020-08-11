@@ -13,7 +13,7 @@ MODEL:
         NAME: MeanVFE
 
     BACKBONE_3D:
-        NAME: VoxelBackBone8x
+        NAME: VoxelBackBone4x
 
     MAP_TO_BEV:
         NAME: HeightCompression
@@ -47,7 +47,7 @@ MODEL:
                 'anchor_rotations': [0, 1.57],
                 'anchor_bottom_heights': [-1.78],
                 'align_center': True,
-                'feature_map_stride': 8,
+                'feature_map_stride': 4,
                 'matched_threshold': 0.6,
                 'unmatched_threshold': 0.45,
                 'exp': True
@@ -58,7 +58,7 @@ MODEL:
                 'anchor_rotations': [0, 1.57],
                 'anchor_bottom_heights': [-0.6],
                 'align_center': True,
-                'feature_map_stride': 8,
+                'feature_map_stride': 4,
                 'matched_threshold': 0.5,
                 'unmatched_threshold': 0.35,
                 'exp': True
@@ -69,7 +69,7 @@ MODEL:
                 'anchor_rotations': [0, 1.57],
                 'anchor_bottom_heights': [-0.6],
                 'align_center': True,
-                'feature_map_stride': 8,
+                'feature_map_stride': 4,
                 'matched_threshold': 0.5,
                 'unmatched_threshold': 0.35,
                 'exp': True
