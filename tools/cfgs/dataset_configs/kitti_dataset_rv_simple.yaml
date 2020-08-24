@@ -73,12 +73,12 @@ DATA_PROCESSOR:
     #   log: Yes
 
     - NAME: transform_points_to_voxels_rv_simple
-      VOXEL_SIZE: [0.05, 0.05, 0.1]
-      VOXEL_SIZE_: [0.0017488876377385954, 0.05625, 0.41875]
+      # VOXEL_SIZE: [0.05, 0.05, 0.1]
+      # VOXEL_SIZE_: [0.0017488876377385954, 0.05625, 0.41875]
 
       # fake data for featuremap size
-      # VOXEL_SIZE: [0.12578125, 0.15625, 0.1]
-      # VOXEL_SIZE_: [0.004809441003781137, 0.15625, 0.0625]
+      VOXEL_SIZE: [0.12578125, 0.15625, 0.1]
+      VOXEL_SIZE_: [0.004809441003781137, 0.17578125, 0.41875]
 
       POINT_CLOUD_SPHERE_RANGE : [1.791759469228055,  -45, 86.65, 4.254193263163997, 45, 103.4 ]
       # v_range: [86.65, 103.4]
