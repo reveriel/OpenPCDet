@@ -157,6 +157,8 @@ class VoxelBackBone8x(nn.Module):
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]
         out = self.conv_out(x_conv4)
+
+        print("output shape = ", out.spatial_shape)
         self.timer.record("conv_out")
         self.timer.end()
 
