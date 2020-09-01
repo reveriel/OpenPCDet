@@ -3,12 +3,13 @@
 **egg-info**
 **dist**
 data/
+output/
 *.pyc
 venv/
 *.idea/
 *.so
-*.yaml
-*.sh 
+# *.yaml
+# *.sh 
 *.pth
 *.pkl
 *.zip
