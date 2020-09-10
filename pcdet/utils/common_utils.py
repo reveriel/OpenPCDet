@@ -193,3 +193,30 @@ def merge_results_dist(result_part, size, tmpdir):
     ordered_results = ordered_results[:size]
     shutil.rmtree(tmpdir)
     return ordered_results
+
+
+def paint_mask(points, img, calib):
+    ''' img: mask, 0 bg, 1 cyc, 2 ped >=3 car
+    '''
+    n, _ = points.shape
+    pts_img, _ = calib.lidar_to_img(points[:, :3])
+    pts_img = pts_img.astype(np.int)
+    h, w = img.shape
+    mask = np.zeros(n)
+    one_hot = np.zeros((n, 3))
+    ind = (pts_img[:, 0] < w) & (pts_img[:, 0] >= 0) & (
+        pts_img[:, 1] < h) & (pts_img[:, 1] >= 0)
+    mask[ind] = img[pts_img[ind, 1], pts_img[ind, 0]]
+    for i in range(n):
+        if mask[i] == 0:  # pass background
+            continue
+        elif mask[i] == 1:
+            one_hot[i, 0] = 1
+        elif mask[i] == 2:
+            one_hot[i, 1] = 1
+        elif mask[i] >= 3:
+            one_hot[i, 2] = 1
+        else:
+            assert False, 'mask error'
+    pts_aug = np.concatenate((points, one_hot.astype(np.float32)), axis=1)
+    return pts_aug
