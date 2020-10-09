@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["--cfg_file", "cfgs/kitti_models/pv_rcnn.yaml",
+            "args": ["--cfg_file", "cfgs/kitti_models/pointpillar.yaml",
                      "--extra_tag", "debug",
                      "--batch_size", "2"]
         }

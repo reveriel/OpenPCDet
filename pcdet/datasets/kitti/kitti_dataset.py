@@ -6,7 +6,7 @@ from skimage import io
 from PIL import Image
 
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
-from ...utils import box_utils, calibration_kitti, common_utils, object3d_kitti
+from ...utils import box_utils, calibration_kitti, common_utils, object3d_kitti, point_transform
 from ..dataset import DatasetTemplate
 
 
@@ -60,20 +60,26 @@ class KittiDataset(DatasetTemplate):
         split_dir = self.root_path / 'ImageSets' / (self.split + '.txt')
         self.sample_id_list = [x.strip() for x in open(split_dir).readlines()] if split_dir.exists() else None
 
-    # def get_lidar(self, idx):
-    #     lidar_file = self.root_split_path / 'velodyne' / ('%s.bin' % idx)
-    #     assert lidar_file.exists()
-    #     return np.fromfile(str(lidar_file), dtype=np.float32).reshape(-1, 4)
-
     def get_lidar(self, idx):
-        lidar_file = self.root_split_path / 'velodyne-mask' / ('%s.bin' % idx)
+        lidar_file = self.root_split_path / 'velodyne' / ('%s.bin' % idx)
         assert lidar_file.exists()
-        return np.fromfile(str(lidar_file), dtype=np.float32).reshape(-1, 7)
+        return np.fromfile(str(lidar_file), dtype=np.float32).reshape(-1, 4)
 
+    # def get_lidar(self, idx):
+    #     lidar_file = self.root_split_path / 'velodyne-mask-onehot4' / ('%s.bin' % idx)
+    #     assert lidar_file.exists()
+    #     return np.fromfile(str(lidar_file), dtype=np.float32).reshape(-1, 8)
+    
     def get_lidar_xyzr(self, idx):
         lidar_file = self.root_split_path / 'velodyne' / ('%s.bin' % idx)
         assert lidar_file.exists()
         return np.fromfile(str(lidar_file), dtype=np.float32).reshape(-1, 4)
+
+    def get_range_image(self, lidar):
+        # lidar: > 10W points
+        # range_img: ~2W
+        range_image, theta_idx, phi_idx = point_transform.xyz2range_v2(lidar)
+        return range_image, theta_idx, phi_idx
 
     def get_img_mask(self, idx):
         img_file =  self.root_split_path / 'image_snake' / ('%s.png' % idx)
@@ -216,7 +222,7 @@ class KittiDataset(DatasetTemplate):
         def process_single_scene(sample_idx):
             print('%s sample_idx: %s' % (self.split, sample_idx))
             info = {}
-            pc_info = {'num_features': 7, 'lidar_idx': sample_idx}
+            pc_info = {'num_features': 8, 'lidar_idx': sample_idx}
             info['point_cloud'] = pc_info
 
             image_info = {'image_idx': sample_idx, 'image_shape': self.get_image_shape(sample_idx)}
@@ -227,7 +233,7 @@ class KittiDataset(DatasetTemplate):
             img = self.get_img_mask(sample_idx)  # 1 channel
             lidar = common_utils.paint_mask(lidar, img, calib)
 
-            database_save_path = Path('/root/imagefusion/data/kitti/training/velodyne-mask')
+            database_save_path = Path('/root/imagefusion/data/kitti/training/velodyne-mask-onehot4')
             database_save_path.mkdir(parents=True, exist_ok=True)
             filename = '%s.bin' % sample_idx
             filepath = database_save_path / filename
@@ -350,7 +356,7 @@ class KittiDataset(DatasetTemplate):
     def create_groundtruth_database_mask(self, info_path=None, used_classes=None, split='train'):
         import torch
 
-        database_save_path = Path(self.root_path) / ('gt_database_mask' if split == 'train' else ('gt_database_mask%s' % split))
+        database_save_path = Path(self.root_path) / ('gt_database_mask_onehot4' if split == 'train' else ('gt_database_mask_onehot4_%s' % split))
         db_info_save_path = Path(self.root_path) / ('kitti_dbinfos_%s.pkl' % split)
 
         database_save_path.mkdir(parents=True, exist_ok=True)
@@ -552,13 +558,13 @@ def create_kitti_infos(dataset_cfg, class_names, data_path, save_path, workers=4
     print('---------------Start to generate data infos---------------')
 
     dataset.set_split(train_split)
-    kitti_infos_train = dataset.get_infos_mask(num_workers=workers, has_label=True, count_inside_pts=True)
+    kitti_infos_train = dataset.get_infos(num_workers=workers, has_label=True, count_inside_pts=True)
     with open(train_filename, 'wb') as f:
         pickle.dump(kitti_infos_train, f)
     print('Kitti info train file is saved to %s' % train_filename)
 
     dataset.set_split(val_split)
-    kitti_infos_val = dataset.get_infos_mask(num_workers=workers, has_label=True, count_inside_pts=True)
+    kitti_infos_val = dataset.get_infos(num_workers=workers, has_label=True, count_inside_pts=True)
     with open(val_filename, 'wb') as f:
         pickle.dump(kitti_infos_val, f)
     print('Kitti info val file is saved to %s' % val_filename)
@@ -575,7 +581,7 @@ def create_kitti_infos(dataset_cfg, class_names, data_path, save_path, workers=4
 
     print('---------------Start create groundtruth database for data augmentation---------------')
     dataset.set_split(train_split)
-    dataset.create_groundtruth_database_mask(train_filename, split=train_split)
+    dataset.create_groundtruth_database(train_filename, split=train_split)
 
     print('---------------Data preparation Done---------------')
 

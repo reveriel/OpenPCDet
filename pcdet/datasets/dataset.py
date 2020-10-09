@@ -141,6 +141,11 @@ class DatasetTemplate(torch_data.Dataset):
         data_dict = self.data_processor.forward(
             data_dict=data_dict
         )
+        points = data_dict['points']
+        range_image, theta_idx, phi_idx = self.get_range_image(points)  # this is after aug.
+        data_dict['range_image'] = range_image
+        data_dict['theta_idx'] = theta_idx
+        data_dict['phi_idx'] = phi_idx
         data_dict.pop('gt_names', None)
 
         return data_dict
@@ -170,7 +175,10 @@ class DatasetTemplate(torch_data.Dataset):
                     for k in range(batch_size):
                         batch_gt_boxes3d[k, :val[k].__len__(), :] = val[k]
                     ret[key] = batch_gt_boxes3d
+                elif key in ['theta_idx', 'phi_idx']:
+                    ret[key] = val
                 else:
+                    # stack: 增加维度
                     ret[key] = np.stack(val, axis=0)
             except:
                 print('Error in collate_batch: key=%s' % key)
