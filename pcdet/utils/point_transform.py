@@ -98,8 +98,8 @@ def xyz2range_v2(points, idx=None):
     angle_diff = np.hstack((angle_diff, 0.0001))  # append one
     # new row when diff bigger than threashold
     angle_diff_mask = angle_diff > threshold_angle
-    theta_idx = -np.cumsum(angle_diff_mask)
-    theta_idx += 20  # shift down for 20 pixels. XXX: bad practice.
+    theta_idx = np.cumsum(angle_diff_mask)
+#    theta_idx += 20  # shift down for 20 pixels. XXX: bad practice.
     theta_idx[theta_idx >= 64] = 63
     # print("theta max min", theta_idx.max(), theta_idx.min())
     delta_phi = np.radians(90. / 512.)
@@ -119,7 +119,7 @@ def xyz2range_v2(points, idx=None):
     depth_map[4, theta_idx, phi_idx] = intensity
     # plt.imshow(depth_map[3, :, :], cmap=plt.cm.jet)
     # plt.savefig('%s.jpg' % idx)
-    return depth_map, theta_idx, phi_idx
+    return depth_map
 
 
 def get_lidar(idx):
