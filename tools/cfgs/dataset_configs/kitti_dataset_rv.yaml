@@ -64,7 +64,7 @@ DATA_PROCESSOR:
 
   # conflict with 'transform_points_to_voxels'
     - NAME: transform_points_to_rangevoxels
-      v_res: 41 # H
+      v_res: 40 # H
       h_res: 512 # W 1600
       d_res: 512 # D 1408
       # v_range: [76.6, 103.4]

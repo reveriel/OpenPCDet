@@ -77,7 +77,7 @@ def readinfo():
     info_path = Path(instance["info_path"])
     dataset_class_name = instance["dataset_class_name"]
     # ignore
-    cfg_file = "cfgs/kitti_models/second.yaml"
+    # cfg_file = "cfgs/kitti_models/second.yaml"
     cfg_from_yaml_file(cfg_file, cfg)
     BACKEND.cfg = cfg
 

@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from pcdet.models.dense_heads.target_assigner.anchor_centers import Centers, range_res2centers
 
 
 class AnchorGenerator(object):
@@ -107,12 +108,20 @@ class AnchorGeneratorRV(object):
                 phi_stride = (anchor_range_sphere[4] - anchor_range_sphere[1]) / (grid_size[1] - 1)
                 logr_offset, phi_offset = 0, 0
 
-            logr_shifts = torch.arange(
-                anchor_range_sphere[0] + logr_offset, anchor_range_sphere[3] + 1e-5, step=logr_stride, dtype=torch.float32,
-            ).cuda()
-            phi_shifts = torch.arange(
-                anchor_range_sphere[1] + phi_offset, anchor_range_sphere[4] + 1e-5, step=phi_stride, dtype=torch.float32,
-            ).cuda()
+            logr_center = range_res2centers([anchor_range_sphere[0], anchor_range_sphere[3]], 512).conv(3,2,1).conv(3,2,1).conv(3,1,1)
+            logr_shifts = torch.arange(logr_center.start, anchor_range_sphere[3] + 1e-5, step=logr_center.delta, dtype=torch.float32 ).cuda()
+            # logr_shifts = torch.arange(
+            #     anchor_range_sphere[0] + logr_offset, anchor_range_sphere[3] + 1e-5, step=logr_stride, dtype=torch.float32,
+            # ).cuda()
+
+            phi_center = range_res2centers([anchor_range_sphere[1], anchor_range_sphere[4]], 512).conv(3,2,1).conv(3,2,1).conv(3,1,1)
+            phi_shifts = torch.arange(phi_center.start, anchor_range_sphere[4] + 1e-5, step=phi_center.delta, dtype=torch.float32 ).cuda()
+
+            # phi_shifts = torch.arange(
+            #     anchor_range_sphere[1] + phi_offset, anchor_range_sphere[4] + 1e-5, step=phi_stride, dtype=torch.float32,
+            # ).cuda()
+            # print("logr_shifts = ", logr_shifts)
+            # print("phi_shifts = ", phi_shifts)
 
             z_shifts = logr_shifts.new_tensor(anchor_height)
             num_anchor_size, num_anchor_rotation = anchor_size.__len__(), anchor_rotation.__len__()

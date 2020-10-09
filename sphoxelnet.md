@@ -30,6 +30,12 @@ python train.py --cfg_file cfgs/kitti_models/<model.yaml> --batch_size 8 --epoch
 
 ## visualization
 
+First, install dependencies.
+
+```
+pip install -r kittiviewer/requirements.txt
+```
+
 go to work directory
 
 ```
